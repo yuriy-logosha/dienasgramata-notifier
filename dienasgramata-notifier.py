@@ -48,7 +48,7 @@ while True:
         def email(id, tag):
             el = list(dienasgramata.find({"_id": ObjectId(id)}))
             if el and el[0]:
-                msg = MIMEText("Date: {}\r\nTema: {}\r\nExercise: {}".format(el[0]['date'], el[0]['tema'], el[0]['exercise']))
+                msg = MIMEText("Date: {}\r\nTema: {}\r\nExercise: {}".format(el[0]['date'].strftime("%d %B %Y"), el[0]['tema'], el[0]['exercise']))
                 msg["From"] = config['email.from']
                 msg["Subject"] = "{} {}".format(config['email.subj.' + tag], el[0]['subject'])
                 msg["To"] = ", ".join(config['email.to'])
