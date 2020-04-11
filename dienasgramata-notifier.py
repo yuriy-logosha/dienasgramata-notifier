@@ -50,7 +50,7 @@ while True:
             if el and el[0]:
                 msg = MIMEText("Date: {}\r\nTema: {}\r\nExercise: {}".format(el[0]['date'], el[0]['tema'], el[0]['exercise']))
                 msg["From"] = config['email.from']
-                msg["Subject"] = "{} ".format(config['email.subj.' + tag], el[0]['subject'])
+                msg["Subject"] = "{} {}".format(config['email.subj.' + tag], el[0]['subject'])
                 for r in config['email.to']:
                     msg["To"] = r
                     print("{}".format(msg))
