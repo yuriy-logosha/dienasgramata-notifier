@@ -1,0 +1,15 @@
+{
+  "logging.name": "dienasgramata-notifier",
+  "logging.format": "%(asctime)-15s %(levelname)s %(message)s",
+  "logging.file": "dienasgramata-notifier.log",
+  "logging.level": 10,
+  "db.url": "mongodb://192.168.1.61:27017/",
+  "kafka.topic": "notifications",
+  "kafka.host": "192.168.1.63:9092",
+  "kafka.group": "my-group",
+  "email.to": ["yuriy.logosha@gmail.com"],
+  "email.from": "master@darit.space",
+  "email.subj.inserted": "New",
+  "email.subj.updated": "Update",
+  "restart": 60
+}
