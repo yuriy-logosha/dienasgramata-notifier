@@ -51,7 +51,7 @@ while True:
                 msg = MIMEText("Date: {}\r\nTema: {}\r\nExercise: {}".format(el[0]['date'], el[0]['tema'], el[0]['exercise']))
                 msg["From"] = config['email.from']
                 msg["Subject"] = "{} {}".format(config['email.subj.' + tag], el[0]['subject'])
-                msg["To"] = config['email.to']
+                msg["To"] = ", ".join(config['email.to'])
                 print("{}".format(msg))
                 p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
                 p.communicate(msg.as_string())
