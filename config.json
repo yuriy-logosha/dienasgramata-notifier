@@ -8,7 +8,7 @@
   "kafka.host": "192.168.1.63:9092",
   "kafka.group": "my-group",
   "email.to": ["yuriy.logosha@gmail.com"],
-  "email.from": "Dienasgrāmata <master@darit.space>",
+  "email.from": "=?utf-8?q?Dienasgr=C4=81mata?= <master@darit.space>",
   "email.subj.inserted": "Pievienojot: ",
   "email.subj.updated": "Atjaunināt: ",
   "restart": 60

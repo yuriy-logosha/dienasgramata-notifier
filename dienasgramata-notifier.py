@@ -7,6 +7,7 @@ from kafka import KafkaConsumer
 import pymongo
 from bson import ObjectId
 from email.mime.text import MIMEText
+from email.header import Header
 from subprocess import Popen, PIPE
 
 from utils import json_from_file
@@ -38,7 +39,6 @@ logging.basicConfig(format=config["logging.format"], handlers=[c_handler, f_hand
 logger = logging.getLogger(config["logging.name"])
 logger.setLevel(logging_level)
 
-
 while True:
     myclient = pymongo.MongoClient(config["db.url"])
 
@@ -48,11 +48,11 @@ while True:
         def email(id, tag):
             el = list(dienasgramata.find({"_id": ObjectId(id)}))
             if el and el[0]:
-                msg = MIMEText("Data: {}\r\nTēma: {}\r\nUzdots: {}".format(el[0]['date'].strftime("%d %B %Y"), el[0]['tema'], el[0]['exercise']))
+                msg = MIMEText("Data: {}\r\nTēma: {}\r\nUzdots: {}".format(el[0]['date'].strftime("%d %B %Y"), el[0]['tema'], el[0]['exercise']), 'plain', 'utf-8')
                 msg["From"] = config['email.from']
-                msg["Subject"] = "{} {}".format(config['email.subj.' + tag], el[0]['subject'])
+                msg["Subject"] = Header("{} {}".format(config['email.subj.' + tag], el[0]['subject']), 'utf-8')
                 msg["To"] = ", ".join(config['email.to'])
-                print("{}".format(msg))
+                print("{}".format(msg.as_string()))
                 p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
                 p.communicate(msg.as_string())
 
@@ -80,6 +80,3 @@ while True:
             time.sleep(config['restart'])
         else:
             break
-
-
-
