@@ -51,11 +51,10 @@ while True:
                 msg = MIMEText("Date: {}\r\nTema: {}\r\nExercise: {}".format(el[0]['date'], el[0]['tema'], el[0]['exercise']))
                 msg["From"] = config['email.from']
                 msg["Subject"] = "{} {}".format(config['email.subj.' + tag], el[0]['subject'])
-                for r in config['email.to']:
-                    msg["To"] = r
-                    print("{}".format(msg))
-                    p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
-                    p.communicate(msg.as_string())
+                msg["To"] = config['email.to']
+                print("{}".format(msg))
+                p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
+                p.communicate(msg.as_string())
 
         try:
             consumer = KafkaConsumer(config['kafka.topic'], bootstrap_servers=[config['kafka.host']], group_id=config['kafka.group'], enable_auto_commit=False, value_deserializer=lambda x: json.loads(x.decode('utf-8')))
