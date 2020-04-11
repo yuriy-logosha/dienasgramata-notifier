@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+import locale
 import time
 import json
 from kafka import KafkaConsumer
@@ -38,6 +39,12 @@ print("Selecting logging file \"%s\"" % config['logging.file'])
 logging.basicConfig(format=config["logging.format"], handlers=[c_handler, f_handler])
 logger = logging.getLogger(config["logging.name"])
 logger.setLevel(logging_level)
+for loc in config["locale"]:
+    try:
+        locale.setlocale(locale.LC_ALL, loc)
+        break
+    except locale.Error:
+        continue
 
 while True:
     myclient = pymongo.MongoClient(config["db.url"])
@@ -48,9 +55,14 @@ while True:
         def email(id, tag):
             el = list(dienasgramata.find({"_id": ObjectId(id)}))
             if el and el[0]:
-                msg = MIMEText("Data: {}\r\nTēma: {}\r\nUzdots: {}".format(el[0]['date'].strftime("%d %B %Y"), el[0]['tema'], el[0]['exercise']), 'plain', 'utf-8')
+                date_str = el[0]['date'].strftime("%d %B %Y")
+                tema = el[0]['tema']
+                subj = el[0]['subject']
+                ex = el[0]['exercise']
+                first_word = config['email.subj.' + tag]
+                msg = MIMEText(f"Data: {date_str}\r\nTēma: {tema}\r\nUzdots: {ex}", 'plain', 'utf-8')
                 msg["From"] = config['email.from']
-                msg["Subject"] = Header("{} {}".format(config['email.subj.' + tag], el[0]['subject']), 'utf-8')
+                msg["Subject"] = Header(f"{first_word} {subj}", 'utf-8')
                 msg["To"] = ", ".join(config['email.to'])
                 print("{}".format(msg.as_string()))
                 p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
