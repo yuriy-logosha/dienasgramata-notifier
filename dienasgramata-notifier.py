@@ -41,6 +41,7 @@ logger = logging.getLogger(config["logging.name"])
 logger.setLevel(logging_level)
 
 api_version = (config["kafka.api.version.major"], config["kafka.api.version.middle"], config["kafka.api.version.minor"])
+UTF_8 = 'utf-8'
 for loc in config["locale"]:
     try:
         locale.setlocale(locale.LC_ALL, loc)
@@ -55,44 +56,55 @@ while True:
         dienasgramata = myclient.school.dienasgramata
 
 
-        def get_emails():
+        def get_emailers():
             emails = []
             for e in list(myclient.school.notification.find({"enabled": True})):
                 emails.append(f"{e['name']} <{e['email']}>")
             return emails
 
         def map(el):
-            return {"data":el[0]['date'].strftime("%d %B %Y"), 'tema': el[0]['tema'], 'uzdots':el[0]['subject']}
+            return {"data":el[0]['date'].strftime("%d %B %Y"), 'tema': el[0]['tema'], 'uzdots':el[0]['exercise'], 'subject':el[0]['subject']}
 
-        def build_msg(_msg, tag) -> str:
-            msg = MIMEText(f"Data: {_msg['data']}\r\nTēma: {_msg['tema']}\r\nUzdots: {_msg['uzdots']}", 'plain', 'utf-8')
+        def build_body(mapped_msg):
+            return f"Data: {mapped_msg['data']}\r\nPriekšmets: {mapped_msg['subject']}\r\nTēma: {mapped_msg['tema']}\r\nUzdots: {mapped_msg['uzdots']}"
+
+        def build_subject(txt):
+            return Header(f"{txt}", UTF_8)
+
+        def build_envelope(bodys, subj) -> str:
+            msg = MIMEText("\r\n\r\n".join(bodys), 'plain', UTF_8)
             msg["From"] = config['email.from']
-            msg["Subject"] = Header(f"{config['email.subj.' + tag]}: {_msg['uzdots']}", 'utf-8')
-            msg["To"] = ", ".join(get_emails())
+            msg["Subject"] = subj
+            msg["To"] = ", ".join(get_emailers())
             return msg.as_string()
 
-        def email(id, tag):
+        def send_email(msg):
+            print("{}".format(msg))
+            p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
+            p.communicate(msg)
+
+        def get_dienasgramata_info(id):
             el = dienasgramata.find({"_id": ObjectId(id)})
             if el:
-                msg = build_msg(map(el), tag)
-                print("{}".format(msg))
-                p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
-                p.communicate(msg)
+                return map(el)
 
         try:
-            consumer = KafkaConsumer(config['kafka.topic'], bootstrap_servers=[config['kafka.host']], group_id=config['kafka.group'], enable_auto_commit=False, api_version=api_version, value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+            consumer = KafkaConsumer(config['kafka.topic'], bootstrap_servers=[config['kafka.host']], group_id=config['kafka.group'], enable_auto_commit=False, api_version=api_version, value_deserializer=lambda x: json.loads(x.decode(UTF_8)))
 
             for message in consumer:
                 try:
+                    infos = []
+                    subject = []
                     if 'inserted' in message.value:
-                        for d in message.value['inserted']:
-                            email(d, 'inserted')
+                        infos.append("\r\n\r\n".join([build_body(get_dienasgramata_info(id)) for id in message.value['inserted']]))
+                        subject.append(config['email.subj.inserted'])
                     if 'updated' in message.value:
-                        for d in message.value['updated']:
-                            email(d, 'updated')
+                        infos.append("\r\n\r\n".join([build_body(get_dienasgramata_info(id)) for id in message.value['updated']]))
+                        subject.append(config['email.subj.updated'])
+                    send_email(build_envelope(infos, build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))))
+                    consumer.commit()
                 except Exception as e:
-                    logger.error(e)
-                consumer.commit()
+                    logger.exception(e)
 
         except RuntimeError as e:
             logger.error(e)
