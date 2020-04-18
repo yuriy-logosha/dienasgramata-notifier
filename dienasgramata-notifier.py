@@ -39,6 +39,8 @@ print("Selecting logging file \"%s\"" % config['logging.file'])
 logging.basicConfig(format=config["logging.format"], handlers=[c_handler, f_handler])
 logger = logging.getLogger(config["logging.name"])
 logger.setLevel(logging_level)
+
+api_version = (config["kafka.api.version.major"], config["kafka.api.version.middle"], config["kafka.api.version.minor"])
 for loc in config["locale"]:
     try:
         locale.setlocale(locale.LC_ALL, loc)
@@ -78,7 +80,7 @@ while True:
                 p.communicate(msg)
 
         try:
-            consumer = KafkaConsumer(config['kafka.topic'], bootstrap_servers=[config['kafka.host']], group_id=config['kafka.group'], enable_auto_commit=False, value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+            consumer = KafkaConsumer(config['kafka.topic'], bootstrap_servers=[config['kafka.host']], group_id=config['kafka.group'], enable_auto_commit=False, api_version=api_version, value_deserializer=lambda x: json.loads(x.decode('utf-8')))
 
             for message in consumer:
                 try:
