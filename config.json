@@ -11,6 +11,7 @@
   "kafka.api.version.middle": 3,
   "kafka.api.version.minor": 1,
   "email.from": "=?utf-8?q?Dienasgr=C4=81mata?= <master@darit.space>",
+  "email.reply": "=?utf-8?q?Dienasgr=C4=81mata?= <master@darit.space>",
   "email.subj.inserted": "Pievienojot",
   "email.subj.updated": "Atjaunināt",
   "locale": ["lv", "lv_LV", "lv_LV.utf8", "lv_LV.UTF8", "lv_LV.ISO8859-4", "lv_LV.ISO8859-13"],

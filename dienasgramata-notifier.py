@@ -76,6 +76,7 @@ while True:
             msg["From"] = config['email.from']
             msg["Subject"] = subj
             msg["To"] = ", ".join(get_emailers())
+            msg["Reply-To"] = config['email.reply']
             return msg.as_string()
 
         def send_email(msg):
