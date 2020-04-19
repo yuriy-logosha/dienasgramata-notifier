@@ -63,20 +63,39 @@ while True:
             return emails
 
         def map(el):
-            return {"data":el[0]['date'].strftime("%d %B %Y"), 'tema': el[0]['tema'], 'uzdots':el[0]['exercise'], 'subject':el[0]['subject']}
+            return {"data": el[0]['date'].strftime("%d %B %Y"),
+                    'tema': el[0]['tema'] if len(el[0]['tema'].strip()) > 0 else "-",
+                    'uzdots': el[0]['exercise'] if len(el[0]['exercise'].strip()) > 0 else "-",
+                    'subject': el[0]['subject'] if len(el[0]['subject'].strip()) > 0 else "-"}
 
         def build_body(mapped_msg):
-            return f"Data: {mapped_msg['data']}\r\nPriekšmets: {mapped_msg['subject']}\r\nTēma: {mapped_msg['tema']}\r\nUzdots: {mapped_msg['uzdots']}"
+            return f"<table>" \
+                f"<tr>" \
+                f"<td>Data:</td><td>{mapped_msg['data']}</td>" \
+                f"</tr>" \
+                f"<tr>" \
+                f"<td>Priekšmets:</td><td>{mapped_msg['subject']}</td>" \
+                f"</tr>" \
+                f"<tr>" \
+                f"<td>Tēma:</td><td>{mapped_msg['tema']}</td>" \
+                f"</tr>" \
+                f"<tr>" \
+                f"<td>Uzdots:</td><td>{mapped_msg['uzdots']}</td>" \
+                f"</tr>" \
+                f"</table>"
 
         def build_subject(txt):
             return Header(f"{txt}", UTF_8)
 
-        def build_envelope(bodys, subj) -> str:
-            msg = MIMEText("\r\n\r\n".join(bodys), 'plain', UTF_8)
+        def build_text_envelope(txt, subj) -> str:
+            style = "table {border-spacing: 5px;margin: 20px 0;}"
+            body = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style>"+style+"</style></head><body>"+txt+"</body></html>"
+            msg = MIMEText(body, 'html', UTF_8)
             msg["From"] = config['email.from']
             msg["Subject"] = subj
             msg["To"] = ", ".join(get_emailers())
-            msg["Reply-To"] = config['email.reply']
+            # msg["Reply-To"] = config['email.reply']
+            print(body)
             return msg.as_string()
 
         def send_email(msg):
@@ -97,12 +116,17 @@ while True:
                     infos = []
                     subject = []
                     if 'inserted' in message.value:
-                        infos.append("\r\n\r\n".join([build_body(get_dienasgramata_info(id)) for id in message.value['inserted']]))
+                        infos.append(f"<h2>{config['email.subj.inserted']}</h2>")
+                        for id in message.value['inserted']:
+                            infos.append(build_body(get_dienasgramata_info(id)))
                         subject.append(config['email.subj.inserted'])
                     if 'updated' in message.value:
-                        infos.append("\r\n\r\n".join([build_body(get_dienasgramata_info(id)) for id in message.value['updated']]))
+                        infos.append(f"<h2>{config['email.subj.updated']}</h2>")
+                        for id in message.value['updated']:
+                            infos.append(build_body(get_dienasgramata_info(id)))
                         subject.append(config['email.subj.updated'])
-                    send_email(build_envelope(infos, build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))))
+                    subj = build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))
+                    send_email(build_text_envelope("".join(infos), subj))
                     consumer.commit()
                 except Exception as e:
                     logger.exception(e)
