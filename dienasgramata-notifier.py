@@ -154,7 +154,7 @@ while True:
 
                     subj = build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))
                     send_email(build_envelope(build_html_envelope("".join(infos_html), "".join(infos_text)), subj))
-                    # consumer.commit()
+                    consumer.commit()
                 except Exception as e:
                     logger.exception(e)
 
