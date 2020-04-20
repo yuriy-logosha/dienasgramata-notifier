@@ -13,6 +13,7 @@ from subprocess import Popen, PIPE
 
 from utils import json_from_file
 
+COMMASPACE = ', '
 config_file_name = 'config.json'
 config = {}
 
@@ -68,7 +69,7 @@ while True:
                     'uzdots': el[0]['exercise'] if len(el[0]['exercise'].strip()) > 0 else "-",
                     'subject': el[0]['subject'] if len(el[0]['subject'].strip()) > 0 else "-"}
 
-        def build_body(mapped_msg):
+        def build_html_body(mapped_msg):
             return f"<table>" \
                 f"<tr>" \
                 f"<td>Data:</td><td>{mapped_msg['data']}</td>" \
@@ -84,19 +85,33 @@ while True:
                 f"</tr>" \
                 f"</table>"
 
+        def build_text_body(mapped_msg):
+            return f"Data: {mapped_msg['data']}" \
+                f"\r\n" \
+                f"Priekšmets: {mapped_msg['subject']}" \
+                f"\r\n" \
+                f"Tēma: {mapped_msg['tema']}" \
+                f"\r\n" \
+                f"Uzdots: {mapped_msg['uzdots']}"
+
         def build_subject(txt):
             return Header(f"{txt}", UTF_8)
 
-        def build_text_envelope(txt, subj) -> str:
+        def build_html_envelope(html, txt):
             style = "table {border-spacing: 5px;margin: 20px 0;}"
-            body = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><style>"+style+"</style></head><body>"+txt+"</body></html>"
+            body = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><style>" + style +"</style></head><body><div style=\"display:none!important;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all\">" + txt +"</div><div>"+ html + "</div></body></html>"
             msg = MIMEText(body, 'html', UTF_8)
-            msg["From"] = config['email.from']
-            msg["Subject"] = subj
-            msg["To"] = ", ".join(get_emailers())
-            # msg["Reply-To"] = config['email.reply']
-            print(body)
-            return msg.as_string()
+            return msg
+
+        def build_text_envelope(txt):
+            msg = MIMEText(txt, 'plain', UTF_8)
+            return msg
+
+        def build_envelope(env, subj):
+            env["From"] = config['email.from']
+            env["Subject"] = subj
+            env["To"] = COMMASPACE.join(get_emailers())
+            return env.as_string()
 
         def send_email(msg):
             print("{}".format(msg))
@@ -113,21 +128,33 @@ while True:
 
             for message in consumer:
                 try:
-                    infos = []
+                    infos_html = []
+                    infos_text = []
                     subject = []
+
                     if 'inserted' in message.value:
-                        infos.append(f"<h2>{config['email.subj.inserted']}</h2>")
+                        group = config['email.subj.inserted']
+                        infos_html.append(f"<h2>{group}</h2>")
+                        infos_text.append(f"{group}\r\n")
                         for id in message.value['inserted']:
-                            infos.append(build_body(get_dienasgramata_info(id)))
-                        subject.append(config['email.subj.inserted'])
+                            info = get_dienasgramata_info(id)
+                            infos_html.append(build_html_body(info))
+                            infos_text.append(build_text_body(info))
+                        subject.append(group)
+
                     if 'updated' in message.value:
-                        infos.append(f"<h2>{config['email.subj.updated']}</h2>")
+                        group = config['email.subj.updated']
+                        infos_html.append(f"<h2>{group}</h2>")
+                        infos_text.append(f"{group}\r\n")
                         for id in message.value['updated']:
-                            infos.append(build_body(get_dienasgramata_info(id)))
-                        subject.append(config['email.subj.updated'])
+                            info = get_dienasgramata_info(id)
+                            infos_html.append(build_html_body(info))
+                            infos_text.append(build_text_body(info))
+                        subject.append(group)
+
                     subj = build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))
-                    send_email(build_text_envelope("".join(infos), subj))
-                    consumer.commit()
+                    send_email(build_envelope(build_html_envelope("".join(infos_html), "".join(infos_text)), subj))
+                    # consumer.commit()
                 except Exception as e:
                     logger.exception(e)
 
