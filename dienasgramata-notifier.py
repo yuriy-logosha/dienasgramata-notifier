@@ -99,7 +99,11 @@ while True:
 
         def build_html_envelope(html, txt):
             style = "table {border-spacing: 5px;margin: 20px 0;}"
-            body = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/><style>" + style +"</style></head><body><div style=\"display:none!important;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all\">" + txt +"</div><div>"+ html + "</div></body></html>"
+
+            # "<span class=3D"preheader" style=3D"-webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; max-width: 0; color: transparent; height: 0; max-height: 0; width: 0; opacity: 0; overflow: hidden; mso-hide: all; visibility: hidden; display: none !important;">It's not too late for you, your friends, and your family members to get a free one-year subscription to Balance, our new meditation app. </span>""
+            # Content-Transfer-Encoding: quoted-printable
+
+            body = "<!DOCTYPE html><html lang=3D\"en\" xmlns=3D\"http://www.w3.org/1999/xhtml\" xmlns:v=3D\"urn:schemas-microsoft-com:vml\" xmlns:o=3D\"urn:schemas-microsoft-com:office:office\"style=3D\"-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; height: 100% !important; width: 100% !important; margin: 0; padding: 0;\"><head style=3D\"-ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;\"><meta http-equiv=\"Content-Type\" content=\"text/html; charset=3DUTF-8\"/><style>" + style +"</style></head><body><div class=3D\"preheader\" style=3D\"display:none!important;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all\">" + txt +"</div><div>"+ html + "</div></body></html>"
             msg = MIMEText(body, 'html', UTF_8)
             return msg
 
@@ -139,7 +143,7 @@ while True:
                         for id in message.value['inserted']:
                             info = get_dienasgramata_info(id)
                             infos_html.append(build_html_body(info))
-                            infos_text.append(build_text_body(info))
+                            infos_text.append(build_text_body(info)+"\r\n")
                         subject.append(group)
 
                     if 'updated' in message.value:
@@ -149,11 +153,11 @@ while True:
                         for id in message.value['updated']:
                             info = get_dienasgramata_info(id)
                             infos_html.append(build_html_body(info))
-                            infos_text.append(build_text_body(info))
+                            infos_text.append(build_text_body(info)+"\r\n")
                         subject.append(group)
 
                     subj = build_subject("".join(subject) if len(subject) == 1 else " & ".join(subject))
-                    send_email(build_envelope(build_html_envelope("".join(infos_html), "".join(infos_text)), subj))
+                    send_email(build_envelope(build_text_envelope("\r\n".join(infos_text)), subj))
                     consumer.commit()
                 except Exception as e:
                     logger.exception(e)
