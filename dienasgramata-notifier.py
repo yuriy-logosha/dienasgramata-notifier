@@ -118,7 +118,7 @@ while True:
             return env.as_string()
 
         def send_email(msg):
-            print("{}".format(msg))
+            logger.info("{}".format(msg))
             p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE, universal_newlines=True)
             p.communicate(msg)
 
